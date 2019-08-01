@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/context
+         http://www.springframework.org/schema/context/spring-context.xsd
+         http://www.springframework.org/schema/integration
+         http://www.springframework.org/schema/integration/spring-integration.xsd
+         http://www.springframework.org/schema/task
+         http://www.springframework.org/schema/task/spring-task.xsd">
+
+    <!-- 定义producer的参数,不配置按默认执行 -->
+    <bean id="producerProperties" class="java.util.HashMap">
+        <constructor-arg>
+            <map>
+                <entry key="bootstrap.servers" value="${producer.servers}" />
+                <entry key="group.id" value="0" />
+                <entry key="retries" value="1" />   <!-- 消息发送失败，重试次数 -->
+                <!-- 消息打包发送，大小不能超过该值 -->
+                <entry key="batch.size" value="16384" />
+                <!-- 消息发送前，延迟该毫秒，当负载较重是，可减少发送请求的次数，即打包一次发送多条消息 -->
+                <entry key="linger.ms" value="1" />
+                <!-- 生产者缓冲区大小，用于存储还未发送到broker中的消息，超过该值会等待，再后面会抛一次 -->
+                <entry key="buffer.memory" value="33554432" />
+                <entry key="acks" value="1" />
+                <entry key="compression.type" value="gzip" />
+                <entry key="key.serializer"
+                       value="org.apache.kafka.common.serialization.StringSerializer" />
+                <entry key="value.serializer"
+                       value="org.apache.kafka.common.serialization.StringSerializer" />
+            </map>
+
+        </constructor-arg>
+    </bean>
+
+    <!-- 创建kafkatemplate需要使用的producerfactory bean -->
+    <bean id="producerFactory"
+          class="org.springframework.kafka.core.DefaultKafkaProducerFactory">
+        <constructor-arg>
+            <ref bean="producerProperties" />
+        </constructor-arg>
+    </bean>
+
+    <!-- 创建kafkatemplate bean，使用的时候，只需要注入这个bean，即可使用template的send消息方法 -->
+    <bean id="KafkaTemplate" class="org.springframework.kafka.core.KafkaTemplate">
+        <constructor-arg ref="producerFactory" />
+        <constructor-arg name="autoFlush" value="true" />
+        <property name="defaultTopic" value="defaultTopic" />
+        <property name="producerListener" ref="producerListener" />
+    </bean>
+
+    <bean id="producerListener" class="com.cxp.kafkaconfig.KafkaProducerListener" />
+
+
+</beans>

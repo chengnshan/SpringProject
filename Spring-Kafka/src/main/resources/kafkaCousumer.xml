@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration/kafka
+                        http://www.springframework.org/schema/integration/kafka/spring-integration-kafka.xsd
+                        http://www.springframework.org/schema/integration
+                        http://www.springframework.org/schema/integration/spring-integration.xsd
+                        http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans.xsd
+                        http://www.springframework.org/schema/task
+                        http://www.springframework.org/schema/task/spring-task.xsd">
+
+
+    <!-- 定义consumer的参数 -->
+    <bean id="consumerProperties" class="java.util.HashMap">
+        <constructor-arg>
+            <map>
+                <entry key="bootstrap.servers" value="${consumer.servers}" />
+                <entry key="group.id" value="0" />
+                <entry key="enable.auto.commit" value="true" />
+                <entry key="auto.commit.interval.ms" value="1000" />
+                <entry key="session.timeout.ms" value="30000" />
+                <entry key="key.deserializer"
+                       value="org.apache.kafka.common.serialization.StringDeserializer" />
+                <entry key="value.deserializer"
+                       value="org.apache.kafka.common.serialization.StringDeserializer" />
+            </map>
+        </constructor-arg>
+    </bean>
+
+    <!-- 创建consumerFactory bean -->
+    <bean id="consumerFactory"
+          class="org.springframework.kafka.core.DefaultKafkaConsumerFactory">
+        <constructor-arg>
+            <ref bean="consumerProperties" />
+        </constructor-arg>
+    </bean>
+
+    <!-- 实际执行消息消费的类 -->
+    <bean id="messageListernerConsumerService" class="com.cxp.kafkaconfig.KafkaConsumerServer" >
+        <constructor-arg value="${send.topic}"/>
+        <constructor-arg ref="KafkaTemplate"/>
+    </bean>
+
+    <!-- 消费者容器配置信息 -->
+    <bean id="containerProperties"
+          class="org.springframework.kafka.listener.ContainerProperties">
+        <constructor-arg>
+            <array>
+                <value>spring.boot.kafka.simple</value> <!-- 配置topic -->
+            </array>
+        </constructor-arg>
+        <property name="messageListener" ref="messageListernerConsumerService" />
+    </bean>
+
+    <!-- 创建messageListenerContainer bean，使用的时候，只需要注入这个bean -->
+    <bean id="messageListenerContainer"
+          class="org.springframework.kafka.listener.KafkaMessageListenerContainer"
+          init-method="doStart">
+        <constructor-arg ref="consumerFactory" />
+        <constructor-arg ref="containerProperties" />
+    </bean>
+
+    <!-- 实际执行消息消费的类， 回调方法中有consumer实例 -->
+    <bean id="messageConcurListernerConsumerService" class="com.cxp.kafkaconfig.KafkaConcuConsumer"></bean>
+
+    <bean id="topicPartition0" class="org.springframework.kafka.support.TopicPartitionInitialOffset">
+        <constructor-arg value="spring.boot.kafka.reply"/>
+        <constructor-arg value="0"/>
+    </bean>
+    <bean id="topicPartition1" class="org.springframework.kafka.support.TopicPartitionInitialOffset">
+        <constructor-arg value="spring.boot.kafka.reply"/>
+        <constructor-arg value="1"/>
+    </bean>
+
+    <bean id="concurContainerProperties"
+          class="org.springframework.kafka.listener.ContainerProperties">
+        <constructor-arg>
+            <array>
+                <ref bean="topicPartition0"/>
+                <ref bean="topicPartition1"/>
+            </array>
+        </constructor-arg>
+        <property name="messageListener" ref="messageConcurListernerConsumerService" />
+        <property name="groupId" value="replyGroupSpring"/>
+    </bean>
+
+    <!-- 同一group中配置concurrency个消费者， 可达到负载均摊和容灾， 若concurrency 大于top分区数，会自动降级 -->
+    <bean id="messageConcurListenerContainer" class="org.springframework.kafka.listener.ConcurrentMessageListenerContainer">
+        <constructor-arg ref="consumerFactory"/>
+        <constructor-arg ref="concurContainerProperties"/>
+        <property name="concurrency" value="3"/>
+    </bean>
+
+</beans>
