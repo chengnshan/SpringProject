@@ -7,6 +7,9 @@
     <groupId>com.cxp</groupId>
     <artifactId>Spring-Project</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <modules>
+        <module>Spring-Kafka</module>
+    </modules>
     <packaging>pom</packaging>
 
 
