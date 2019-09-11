@@ -1,0 +1,66 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/rabbit
+   http://www.springframework.org/schema/rabbit/spring-rabbit.xsd
+   http://www.springframework.org/schema/beans
+   http://www.springframework.org/schema/beans/spring-beans.xsd
+   http://www.springframework.org/schema/context
+   https://www.springframework.org/schema/context/spring-context.xsd">
+
+
+    <!-- 定义RabbitMQ的连接工厂 -->
+    <bean id="connectionFactory"
+          class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory">
+        <constructor-arg index="0" value="${rabbitmq.host}"/>
+        <constructor-arg index="1" value="${rabbitmq.port}"/>
+        <property name="username" value="${rabbitmq.username}"/>
+        <property name="password" value="${rabbitmq.password}"/>
+        <property name="virtualHost" value="${rabbitmq.virtualHost}"/>
+        <property name="channelCacheSize" value="5"/>
+    </bean>
+
+    <!-- MQ的管理，包括队列、交换器等 -->
+    <rabbit:admin connection-factory="connectionFactory" />
+
+    <!--消息转换器-->
+    <bean id="jsonMessageConverter"
+          class="org.springframework.amqp.support.converter.Jackson2JsonMessageConverter">
+        <property name="javaTypeMapper">
+            <bean class="org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper">
+            </bean>
+        </property>
+    </bean>
+
+    <rabbit:direct-exchange name="directExchange" auto-declare="true" auto-delete="false" durable="true" >
+        <rabbit:bindings>
+            <rabbit:binding key="directBindings" queue="directQueue"></rabbit:binding>
+        </rabbit:bindings>
+    </rabbit:direct-exchange>
+
+    <rabbit:queue name="directQueue" durable="true" auto-delete="false" auto-declare="true" exclusive="false"/>
+
+    <!--自定义监听方法-->
+    <bean id="directListener" class="com.cxp.rabbitConfig.DirectListener"/>
+
+    <!--自定义监听适配器-->
+    <bean id="directAdapter" class="org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter">
+        <constructor-arg ref="directListener"/>
+        <!--设置处理器的消费消息的默认方法-->
+        <property name="defaultListenerMethod" value="onMessage"/>
+        <property name="messageConverter" ref="jsonMessageConverter"></property>
+    </bean>
+
+    <bean id="simpleMessageListenerContainer"
+          class="org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="queueNames" value="directQueue"/>
+        <property name="messageListener" ref="directAdapter"/>
+        <property name="acknowledgeMode" value="MANUAL" />
+        <!--prefetch是每次从一次性从broker里面取的待消费的消息的个数-->
+        <property name="prefetchCount" value="1" />
+        <property name="concurrentConsumers" value="5" />
+    </bean>
+
+</beans>
