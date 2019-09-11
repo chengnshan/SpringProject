@@ -9,7 +9,7 @@ import org.springframework.amqp.core.Message;
  */
 public class DirectListener {
 
-    public String onMessage(String msg,Message message,Channel channel){
+    public String onMessage(Object msg,Message message,Channel channel){
         try{
             System.out.println("DirectListener onMessage 消费.");
             channel.basicAck(message.getMessageProperties().getDeliveryTag(),false);
