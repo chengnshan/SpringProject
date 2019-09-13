@@ -11,6 +11,7 @@
         <module>Spring-Kafka</module>
         <module>Spring-Choose-Datasource</module>
         <module>Spring-Interceptor-transaction</module>
+        <module>Spring-Rabbitmq-Netty</module>
     </modules>
     <packaging>pom</packaging>
 
