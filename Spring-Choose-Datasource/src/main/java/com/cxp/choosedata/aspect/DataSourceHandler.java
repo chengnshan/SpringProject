@@ -29,4 +29,9 @@ public class DataSourceHandler {
     public static String getDataSource() {
         return contextHolder.get();
     }
+
+    public static void removeDataSource(){
+        log.info("清除数据源 {}", contextHolder.get());
+        contextHolder.remove();
+    }
 }
