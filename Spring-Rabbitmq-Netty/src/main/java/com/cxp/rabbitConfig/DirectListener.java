@@ -1,7 +1,10 @@
 package com.cxp.rabbitConfig;
 
-import com.rabbitmq.client.Channel;
-import org.springframework.amqp.core.Message;
+import com.cxp.pojo.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * @author 程
@@ -9,16 +12,23 @@ import org.springframework.amqp.core.Message;
  */
 public class DirectListener {
 
-    public String onMessage(Object msg,Message message,Channel channel){
+    private static final Logger logger = LoggerFactory.getLogger(DirectListener.class);
+
+    public void directString(String msg){
         try{
-            System.out.println("DirectListener onMessage 消费.");
-            channel.basicAck(message.getMessageProperties().getDeliveryTag(),false);
-            System.out.println("DirectListener onMessage 消费成功!");
-            return "success";
+            System.out.println("DirectListener directString 消费."+msg);
+
+            System.out.println("DirectListener directString 消费成功!");
         }catch (Exception e){
             e.printStackTrace();
         }
-        return null;
     }
 
+    public void directObject(User user){
+        System.out.println("DirectListener directObject"+user);
+    }
+
+    public void directObjectList(List<User> userList){
+
+    }
 }

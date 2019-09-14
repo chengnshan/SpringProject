@@ -23,11 +23,14 @@
 
     <context:property-placeholder file-encoding="utf-8" location="classpath:config.properties" />
 
-    <context:component-scan base-package="com.cxp" />
+    <context:component-scan base-package="com.cxp">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+    </context:component-scan>
 
     <context:annotation-config/>
 
 
     <import resource="spring-rabbitmq.xml" />
+    <import resource="spring-redis.xml" />
 
 </beans>

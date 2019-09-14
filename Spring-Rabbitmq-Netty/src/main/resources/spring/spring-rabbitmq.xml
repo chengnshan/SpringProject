@@ -9,7 +9,6 @@
    http://www.springframework.org/schema/context
    https://www.springframework.org/schema/context/spring-context.xsd">
 
-
     <!-- 定义RabbitMQ的连接工厂 -->
     <bean id="connectionFactory"
           class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory">
@@ -22,7 +21,21 @@
     </bean>
 
     <!-- MQ的管理，包括队列、交换器等 -->
-    <rabbit:admin connection-factory="connectionFactory" />
+    <rabbit:admin connection-factory="connectionFactory" auto-startup="true" />
+
+    <!--消息转换器-->
+    <bean id="defaultJackson2JavaTypeMapper" class="org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper">
+        <property name="idClassMapping">
+            <map>
+                <entry key="User" value="com.cxp.pojo.User"/>
+            </map>
+        </property>
+    </bean>
+
+    <bean id="jsonMessageConverter"
+          class="org.springframework.amqp.support.converter.Jackson2JsonMessageConverter">
+        <property name="javaTypeMapper" ref="defaultJackson2JavaTypeMapper"/>
+    </bean>
 
     <bean id="delegatingMessageConverter" class="org.springframework.amqp.support.converter.ContentTypeDelegatingMessageConverter">
         <property name="delegates">
@@ -30,8 +43,7 @@
                 <entry key="text/plain" >
                     <bean class="com.cxp.rabbitConfig.TextMessageConverter" />
                 </entry>
-                <entry key="application/json">
-                    <bean class="org.springframework.amqp.support.converter.Jackson2JsonMessageConverter" />
+                <entry key="application/json" value-ref="jsonMessageConverter">
                 </entry>
             </map>
         </property>
@@ -47,11 +59,15 @@
 
     <rabbit:direct-exchange name="directExchange" auto-declare="true" auto-delete="false" durable="true" >
         <rabbit:bindings>
-            <rabbit:binding key="directBindings" queue="directQueue"></rabbit:binding>
+            <rabbit:binding key="directBindings" queue="directQueue"/>
+            <rabbit:binding key="directObjectBindings" queue="directObjectQueue" />
+            <rabbit:binding key="directObjectListBindings" queue="directObjectListQueue" />
         </rabbit:bindings>
     </rabbit:direct-exchange>
 
     <rabbit:queue name="directQueue" durable="true" auto-delete="false" auto-declare="true" exclusive="false"/>
+    <rabbit:queue name="directObjectQueue" durable="true" auto-delete="false" auto-declare="true" exclusive="false"/>
+    <rabbit:queue name="directObjectListQueue" durable="true" auto-delete="false" auto-declare="true" exclusive="false"/>
 
     <!--自定义监听方法-->
     <bean id="directListener" class="com.cxp.rabbitConfig.DirectListener"/>
@@ -60,8 +76,15 @@
     <bean id="directAdapter" class="org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter">
         <constructor-arg ref="directListener"/>
         <!--设置处理器的消费消息的默认方法-->
-        <property name="defaultListenerMethod" value="onMessage"/>
-        <property name="messageConverter" ref="delegatingMessageConverter"></property>
+        <property name="defaultListenerMethod" value="handleMessage"/>
+        <property name="messageConverter" ref="delegatingMessageConverter" />
+        <property name="queueOrTagToMethodName" >
+            <map>
+                <entry key="directQueue" value="directString"/>
+                <entry key="directObjectQueue" value="directObject" />
+                <entry key="directObjectListQueue" value="directObjectList" />
+            </map>
+        </property>
     </bean>
 
     <bean id="simpleMessageListenerContainer"
@@ -69,10 +92,18 @@
         <property name="connectionFactory" ref="connectionFactory"/>
         <property name="queueNames" value="directQueue"/>
         <property name="messageListener" ref="directAdapter"/>
-        <property name="acknowledgeMode" value="MANUAL" />
+        <property name="acknowledgeMode" value="AUTO" />
         <!--prefetch是每次从一次性从broker里面取的待消费的消息的个数-->
         <property name="prefetchCount" value="1" />
         <property name="concurrentConsumers" value="5" />
     </bean>
+
+    <rabbit:listener-container connection-factory="connectionFactory" concurrency="5"
+                               max-concurrency="10" auto-startup="true" prefetch="1" >
+        <rabbit:listener ref="directAdapter" queue-names="directQueue,directObjectQueue" />
+    </rabbit:listener-container>
+
+    <rabbit:template id="rabbitTemplate" connection-factory="connectionFactory"
+                     message-converter="delegatingMessageConverter" />
 
 </beans>

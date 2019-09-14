@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
  * @author cheng
  * @Date ${date} ${time}
  */
-@RabbitListener(queues = {"directQueue"})
-@Component
+//@RabbitListener(queues = {"directQueue"})
+//@Component
 public class RabbitConsumer {
 
     @Autowired
