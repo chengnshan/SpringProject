@@ -18,6 +18,8 @@
         <property name="password" value="${rabbitmq.password}"/>
         <property name="virtualHost" value="${rabbitmq.virtualHost}"/>
         <property name="channelCacheSize" value="5"/>
+        <property name="publisherConfirms" value="true" />
+        <property name="publisherReturns" value="true" />
     </bean>
 
     <!-- MQ的管理，包括队列、交换器等 -->
@@ -48,32 +50,45 @@
             </map>
         </property>
     </bean>
-    <!--消息转换器-->
- <!--   <bean id="jsonMessageConverter"
-          class="org.springframework.amqp.support.converter.Jackson2JsonMessageConverter">
-        <property name="javaTypeMapper">
-            <bean class="org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper">
-            </bean>
-        </property>
-    </bean>-->
 
+    <!--声明交换器和队列-->
     <rabbit:direct-exchange name="directExchange" auto-declare="true" auto-delete="false" durable="true" >
         <rabbit:bindings>
             <rabbit:binding key="directBindings" queue="directQueue"/>
             <rabbit:binding key="directObjectBindings" queue="directObjectQueue" />
-            <rabbit:binding key="directObjectListBindings" queue="directObjectListQueue" />
         </rabbit:bindings>
     </rabbit:direct-exchange>
 
-    <rabbit:queue name="directQueue" durable="true" auto-delete="false" auto-declare="true" exclusive="false"/>
-    <rabbit:queue name="directObjectQueue" durable="true" auto-delete="false" auto-declare="true" exclusive="false"/>
-    <rabbit:queue name="directObjectListQueue" durable="true" auto-delete="false" auto-declare="true" exclusive="false"/>
+    <rabbit:queue name="directQueue" durable="true" auto-delete="false" auto-declare="true" exclusive="false">
+        <rabbit:queue-arguments>
+            <entry key="x-dead-letter-exchange" value="deaderExchange"/>
+            <entry key="x-dead-letter-routing-key" value="deaderBindings"/>
+            <entry key="x-message-ttl" value="20000" value-type="java.lang.Long" />
+        </rabbit:queue-arguments>
+    </rabbit:queue>
+    <rabbit:queue name="directObjectQueue" durable="true" auto-delete="false" auto-declare="true" exclusive="false">
+        <rabbit:queue-arguments>
+            <entry key="x-dead-letter-exchange" value="deaderExchange"/>
+            <entry key="x-dead-letter-routing-key" value="deaderObjectBindings"/>
+            <entry key="x-message-ttl" value="20000" value-type="java.lang.Long" />
+        </rabbit:queue-arguments>
+    </rabbit:queue>
+
+    <!--声明死信队列-->
+    <rabbit:direct-exchange name="deaderExchange" auto-declare="true" auto-delete="false" durable="true">
+        <rabbit:bindings>
+            <rabbit:binding key="deaderBindings" queue="deaderDirectQueue"/>
+            <rabbit:binding key="deaderObjectBindings" queue="deaderDirectObjectQueue"/>
+        </rabbit:bindings>
+    </rabbit:direct-exchange>
+    <rabbit:queue name="deaderDirectQueue" durable="true" auto-declare="true" exclusive="false" />
+    <rabbit:queue name="deaderDirectObjectQueue" durable="true" auto-declare="true" exclusive="false" />
 
     <!--自定义监听方法-->
     <bean id="directListener" class="com.cxp.rabbitConfig.DirectListener"/>
 
     <!--自定义监听适配器-->
-    <bean id="directAdapter" class="org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter">
+    <bean id="directAdapter" class="com.cxp.rabbitConfig.CustomMessageListenerAdapter">
         <constructor-arg ref="directListener"/>
         <!--设置处理器的消费消息的默认方法-->
         <property name="defaultListenerMethod" value="handleMessage"/>
@@ -81,29 +96,37 @@
         <property name="queueOrTagToMethodName" >
             <map>
                 <entry key="directQueue" value="directString"/>
-                <entry key="directObjectQueue" value="directObject" />
-                <entry key="directObjectListQueue" value="directObjectList" />
+                <entry key="directObjectQueue" value="handleMessage" />
             </map>
         </property>
     </bean>
 
-    <bean id="simpleMessageListenerContainer"
+  <!--  <bean id="simpleMessageListenerContainer"
           class="org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer">
         <property name="connectionFactory" ref="connectionFactory"/>
-        <property name="queueNames" value="directQueue"/>
+        <property name="queueNames" value="directQueue,directObjectQueue"/>
         <property name="messageListener" ref="directAdapter"/>
-        <property name="acknowledgeMode" value="AUTO" />
-        <!--prefetch是每次从一次性从broker里面取的待消费的消息的个数-->
+        <property name="acknowledgeMode" value="MANUAL" />
+        &lt;!&ndash;prefetch是每次从一次性从broker里面取的待消费的消息的个数&ndash;&gt;
         <property name="prefetchCount" value="1" />
         <property name="concurrentConsumers" value="5" />
-    </bean>
+    </bean>-->
 
     <rabbit:listener-container connection-factory="connectionFactory" concurrency="5"
-                               max-concurrency="10" auto-startup="true" prefetch="1" >
+                               max-concurrency="10" auto-startup="true" prefetch="1" acknowledge="manual">
         <rabbit:listener ref="directAdapter" queue-names="directQueue,directObjectQueue" />
     </rabbit:listener-container>
 
+    <!--rabbitTemplate是thread safe的，主要是channel不能共用，但是在rabbitTemplate源码里channel是threadlocal的，
+        所以singleton没问题。但是rabbitTemplate要设置回调类，如果是singleton，回调类就只能有一个，所以如果想要设置不同的
+        回调类，就要设置为prototype的scope-->
     <rabbit:template id="rabbitTemplate" connection-factory="connectionFactory"
-                     message-converter="delegatingMessageConverter" />
+                     message-converter="delegatingMessageConverter"
+                     confirm-callback="callBackSender"
+                     return-callback="returnCallBackSender" mandatory="true" />
 
+    <bean id="callBackSender" class="com.cxp.rabbitConfig.CallBackSender" />
+    <bean id="returnCallBackSender" class="com.cxp.rabbitConfig.ReturnCallBackSender" />
 </beans>
+
+

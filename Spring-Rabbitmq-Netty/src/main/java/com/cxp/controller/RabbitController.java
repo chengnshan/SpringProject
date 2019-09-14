@@ -50,9 +50,18 @@ public class RabbitController {
         messageProperties.setContentType("application/json");
         messageProperties.setContentEncoding("UTF-8");
         messageProperties.getHeaders().put("__TypeId__","User");
+        //在发送端，可通过如下方式设置消息过期时间
+        messageProperties.setExpiration("30000");
         message = new Message(JackJsonUtil.objTojson(user).getBytes(),messageProperties);
         rabbitTemplate.convertAndSend("directExchange","directObjectBindings",message);
 
+
+        return null;
+    }
+
+    @RequestMapping(value = "rabbitSendList")
+    @ResponseBody
+    public String rabbitSendList(){
         List<User> list = new ArrayList<>();
         list.add(new User("张三丰","123456"));
         list.add(new User("张无忌","123456"));
@@ -62,11 +71,13 @@ public class RabbitController {
         MessageProperties messageProperties2 = new MessageProperties();
         messageProperties2.setContentType("application/json");
         messageProperties2.getHeaders().put("__TypeId__","java.util.List");
-        messageProperties2.getHeaders().put("__ContentTypeId__","UserInfo");
-        Message message2 = new Message(strJsonList.getBytes(),messageProperties);
+        messageProperties2.getHeaders().put("__ContentTypeId__","User");
+        Message message2 = new Message(strJsonList.getBytes(),messageProperties2);
 
-        rabbitTemplate.convertAndSend("directExchange", "directObjectListBindings", message,
+        rabbitTemplate.convertAndSend("directExchange", "directObjectBindings", message2,
                 new CorrelationData(UUID.randomUUID().toString()));
-        return null;
+
+    //    rabbitTemplate.convertAndSend("directExchange","1234","654321");
+        return "success";
     }
 }
