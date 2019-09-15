@@ -2,6 +2,7 @@ package com.cxp.netty.server;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
@@ -16,6 +17,7 @@ import java.net.SocketAddress;
  * @author: cheng
  * @create: 2019-09-15 21:22
  */
+@ChannelHandler.Sharable
 public class NettyServerHandler extends ChannelHandlerAdapter {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyServerHandler.class);
@@ -42,7 +44,14 @@ public class NettyServerHandler extends ChannelHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        logger.error(ctx.channel().remoteAddress() + " exceptionCaught :" + cause.getMessage() );
         super.exceptionCaught(ctx, cause);
+    }
+
+    @Override
+    public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+        System.out.println(ctx.channel().remoteAddress() + " channelRegistered " );
+        super.channelRegistered(ctx);
     }
 
 }
