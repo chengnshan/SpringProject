@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.amqp.support.converter.MessageConverter;
 
 /**
+ *重写￿MessageListenerAdapter的onMessage方法，把调用自定义监听器的方法加两个参数
  * @author cheng
  * @Date 2019/9/14 16:43
  */

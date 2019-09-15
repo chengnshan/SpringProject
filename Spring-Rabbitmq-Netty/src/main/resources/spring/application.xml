@@ -29,7 +29,6 @@
 
     <context:annotation-config/>
 
-
     <import resource="spring-rabbitmq.xml" />
     <import resource="spring-redis.xml" />
 

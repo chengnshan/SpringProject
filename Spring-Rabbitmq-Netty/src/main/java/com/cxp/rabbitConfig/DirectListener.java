@@ -8,6 +8,7 @@ import org.springframework.amqp.core.Message;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author 程
@@ -16,6 +17,8 @@ import java.util.List;
 public class DirectListener {
 
     private static final Logger logger = LoggerFactory.getLogger(DirectListener.class);
+
+    private static AtomicInteger atomicInteger = new AtomicInteger();
 
      public void handleMessage(byte[] msg, Message message, Channel channel){
          System.out.println("handleMessage -------------byte-----------");
@@ -37,11 +40,16 @@ public class DirectListener {
     }
 
     public void handleMessage(List<User> userList,Message message,Channel channel){
-         long deliveryTag = message != null ? message.getMessageProperties().getDeliveryTag() : 0l;
+         long deliveryTag = message != null ? message.getMessageProperties().getDeliveryTag() : 0L;
          try{
              System.out.println("handleMessage userList :" +userList);
+             if (atomicInteger.get() == 2){
+                 int i  =10 /0 ;
+             }
+             atomicInteger.addAndGet(1);
             channel.basicAck(deliveryTag,false);
          }catch (Exception e){
+             logger.error("handleMessage userList exception : "+e.getMessage(),e);
              try {
                  channel.basicNack(message.getMessageProperties().getDeliveryTag(),
                          false,false);
