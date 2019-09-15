@@ -12,6 +12,7 @@
         <module>Spring-Choose-Datasource</module>
         <module>Spring-Interceptor-transaction</module>
         <module>Spring-Rabbitmq-Netty</module>
+        <module>Spring-Redis-PubSub</module>
     </modules>
     <packaging>pom</packaging>
 
