@@ -5,6 +5,7 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
+import org.springframework.amqp.rabbit.support.CorrelationData;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -12,8 +13,8 @@ import org.springframework.stereotype.Component;
  * @author cheng
  * @Date ${date} ${time}
  */
-@RabbitListener(queues = {"directQueue"})
-@Component
+//@RabbitListener(queues = {"directQueue"})
+//@Component
 public class RabbitConsumer {
 
     @Autowired
@@ -24,4 +25,7 @@ public class RabbitConsumer {
         System.out.println(message);
         System.out.println(cachingConnectionFactory);
     }
+
 }
+
+
