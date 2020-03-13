@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd
+	http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+    <context:property-placeholder location="classpath:quartz/jdbc.properties"
+                                  file-encoding="UTF-8"/>
+    <!-- Service包(自动注入) -->
+    <context:component-scan base-package="com.cxp.springquartz.service"/>
+
+    <!--Spring中使用Quartz有两种方式:
+        第一种: MethodInvokingJobDetailFactoryBean
+        第二种: JobDetailFactoryBean
+    -->
+    <!--   <bean id="jobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+           <property name="targetObject" ref="myJobOne"/>
+           &lt;!&ndash;任务类中需要执行的方法&ndash;&gt;
+           <property name="targetMethod" value="printMessage"/>
+           &lt;!&ndash;上一次未执行完成的,要等待再执行&ndash;&gt;
+           <property name="concurrent" value="false"/>
+       </bean>-->
+
+    <!--如果不设置schedulerName属性值，默认beanName为schedulerName-->
+    <bean id="schedulerFactoryBean" lazy-init="true" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+        <!--        <property name="dataSource" ref="dataSource"/>-->
+        <!--        <property name="applicationContext" value="applicationContext"/>-->
+        <property name="schedulerName" value="MyQuartzScheduler" />
+        <property name="configLocation" value="classpath:quartz/quartz.properties"/>
+        <!--可选，QuartzScheduler启动时更新己存在的Job，这样就不用每次修改targetObject后删除qrtz_job_details表对应记录了 -->
+        <property name="overwriteExistingJobs" value="true"/>
+        <!--设置自动启动 -->
+        <property name="autoStartup" value="true"/>
+    </bean>
+
+    <import resource="classpath:spring/spring-mybatis.xml"/>
+
+</beans>
