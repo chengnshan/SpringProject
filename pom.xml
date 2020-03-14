@@ -13,6 +13,9 @@
         <module>Spring-Interceptor-transaction</module>
         <module>Spring-Rabbitmq-Netty</module>
         <module>Spring-Redis-PubSub</module>
+        <module>Spring-Quartz</module>
+        <module>Spring-Basic</module>
+        <module>Spring-H2-Database</module>
     </modules>
     <packaging>pom</packaging>
 
