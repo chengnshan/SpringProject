@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:websocket="http://www.springframework.org/schema/websocket"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/websocket
+        https://www.springframework.org/schema/websocket/spring-websocket.xsd">
+
+    <mvc:annotation-driven/>
+
+    <mvc:default-servlet-handler/>
+
+    <!-- Controller包(自动注入) -->
+    <context:component-scan base-package="com.cxp.websocketbasic.controller"/>
+
+    <!-- 对模型视图名称的解析,即在模型视图名称添加前后缀 -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/pages/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+
+    <!--WebSocket配置 参考: https://blog.csdn.net/chenyidong521/article/details/52695093 -->
+    <websocket:handlers allowed-origins="*">
+        <websocket:mapping path="/websocket2" handler="myHandler"/>
+        <websocket:handshake-interceptors>
+            <bean class="com.cxp.websocketbasic.websocket.HandShakeInterceptor"/>
+        </websocket:handshake-interceptors>
+    </websocket:handlers>
+
+    <websocket:handlers allowed-origins="*">
+        <websocket:mapping path="/socketjs/websocket2" handler="myHandler"/>
+        <websocket:sockjs/>
+    </websocket:handlers>
+
+    <bean id="myHandler" class="com.cxp.websocketbasic.websocket.ChatMessageHandler"/>
+
+</beans>

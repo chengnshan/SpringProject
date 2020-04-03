@@ -7,6 +7,8 @@
     <groupId>com.cxp</groupId>
     <artifactId>Spring-Project</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
     <modules>
         <module>Spring-Kafka</module>
         <module>Spring-Choose-Datasource</module>
@@ -16,8 +18,9 @@
         <module>Spring-Quartz</module>
         <module>Spring-Basic</module>
         <module>Spring-H2-Database</module>
+        <module>Spring-WebSocket</module>
     </modules>
-    <packaging>pom</packaging>
+
 
 
 </project>
