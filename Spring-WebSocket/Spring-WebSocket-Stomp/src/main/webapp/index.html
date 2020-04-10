@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" src="webjars/vue/2.6.11/vue.min.js"></script>
+    <script type="text/javascript" src="webjars/stomp-websocket/2.3.3-1/stomp.min.js"></script>
+    <script type="text/javascript" src="webjars/sockjs-client/1.1.2/sockjs.min.js"></script>
+</head>
+<body>
+
+<div id="app">
+    <h1>{{title}}</h1>
+
+    <div>
+        <input type="text" id="sendUser" v-model="sendUserTxt"/>
+        <button id="btn" @click="sendUser">sendToUser</button>
+    </div>
+
+</div>
+
+</body>
+<script>
+    var vue = new Vue({
+        el: '#app',
+        data: {
+            title: 'Webocket stomp.html....',
+            wsUrl:'/stomp',
+            //headers表示客户端的认证信息,若无需认证，直接使用空对象 “{}” 即可
+            headers: {username: 'username', password: 'password'},
+            websocket : null,
+            stompClient : null,
+            topic: ['/topic','/queue'],
+            heartbeat: {
+                outgoing: 20000,
+                incoming: 0
+            },
+            sendUserTxt: ''
+        },
+        mounted(){
+            if ('WebSocket' in window){
+                this.websocket = new WebSocket("ws://localhost:8103" + this.wsUrl);
+            }else {
+                // 建立连接对象（还未发起连接）
+                this.websocket = new SockJS("http://localhost:8103/socketJs" + this.wsUrl);
+            }
+            // 获取 STOMP 子协议的客户端对象
+            this.stompClient = Stomp.over(this.websocket);
+            this.stompClient.heartbeat.outgoing = this.heartbeat.outgoing;
+            this.stompClient.heartbeat.incoming = this.heartbeat.incoming;
+            // 向服务器发起websocket连接并发送CONNECT帧
+            this.stompClient.connect(this.headers,this.connectWs,this.failConnectWs);
+        },
+        methods: {
+            connectWs(frame){
+                // 连接成功时（服务器响应 CONNECTED 帧）的回调方法
+                console.log('已连接【'+ frame + '】');
+                this.stompClient.subscribe(this.topic[0] + '/greetings',function (response) {
+                    console.log('/topic/greetings : === ' + response.body);
+                });
+                this.stompClient.subscribe(this.topic[1] + '/greetings',function (response) {
+                    console.log('/queue/greetings : === ' + response.body);
+                });
+                this.stompClient.subscribe(this.topic[0] + '/wss/twoWays',function (response) {
+                    console.log('/topic/wss/twoWays : === ' + response.body);
+                });
+
+                this.stompClient.subscribe("/user/queue/sendUser", function (response) {
+                    console.log('/user/queue/sendUser : === ' + response.body);
+                });
+
+                this.stompClient.send("/app/wss/hello/张三丰",{}, "Hello, STOMP");
+                this.stompClient.send("/app/wss/twoWays",{}, "黄耀师");
+            },
+            failConnectWs(error){
+                // 连接失败时（服务器响应 ERROR 帧）的回调方法
+                console.log('连接失败【' + error + '】');
+            },
+            sendUser(){
+                this.stompClient.send("/app/wss/sendUser", {} , this.sendUserTxt);
+            }
+        }
+    });
+</script>
+</html>
