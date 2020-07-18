@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+        PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+        "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap>
+    <typeAlias alias="quartzTaskInfo" type="com.cxp.pojo.QuartzTaskInfo"/>
+
+    <resultMap id="quartzTaskInfoResultMap" class="com.cxp.pojo.QuartzTaskInfo">
+        <result property="id" column="ID"/>
+        <result property="jobName" column="JOB_NAME"/>
+        <result property="jobGroup" column="JOB_GROUP"/>
+        <result property="jobDescription" column="JOB_DESCRIPTION"/>
+        <result property="jobClassName" column="JOB_CLASS_NAME"/>
+        <result property="jobStatus" column="JOB_STATUS"/>
+        <result property="cronExpression" column="CRON_EXPRESSION"/>
+        <result property="createTime" column="CREATE_TIME"/>
+    </resultMap>
+
+    <sql id="baseColumn"> ID,JOB_NAME,JOB_DESCRIPTION,JOB_GROUP,JOB_CLASS_NAME,JOB_STATUS,CRON_EXPRESSION,CREATE_TIME,CREATE_TIME </sql>
+    
+    <insert id="insertQuartzTaskInfo" parameterClass="com.cxp.pojo.QuartzTaskInfo">
+        insert into quartz_task_info
+            (JOB_NAME,JOB_GROUP,JOB_DESCRIPTION,JOB_CLASS_NAME,JOB_STATUS,CRON_EXPRESSION,CREATE_TIME,CREATE_TIME)
+        values
+        ( #jobName#,#jobGroup#,#jobDescription#,#jobClassName#,#jobStatus#,#cronExpression#,#createTime# )
+    </insert>
+
+    <delete id="deleteById" parameterClass="Integer">
+        delete from quartz_task_info where id = #id#
+    </delete>
+
+    <select id="listQuartzTaskInfo" resultMap="quartzTaskInfoResultMap">
+        <![CDATA[
+            select * from quartz_task_info
+         ]]>
+    </select>
+
+    <select id="listQuartzTaskInfoMap" resultClass="java.util.HashMap" parameterClass="com.cxp.pojo.QuartzTaskInfo">
+        select <include refid="baseColumn"/> from quartz_task_info
+
+        <dynamic prepend="where 1=1 ">
+            <isNotEmpty property="jobName" prepend="and" > JOB_NAME = #jobName#</isNotEmpty>
+            <isNotEmpty property="jobGroup" prepend="and"> JOB_GROUP= #jobGroup#</isNotEmpty>
+            <isNotEmpty property="jobClassName" prepend="and">and JOB_CLASS_NAME= #jobClassName#</isNotEmpty>
+            <isNotEmpty property="jobStatus">and JOB_STATUS= #jobStatus#</isNotEmpty>
+            <isNotEmpty property="createTime">and CREATE_TIME= #createTime#</isNotEmpty>
+        </dynamic>
+
+    </select>
+
+    <select id="getByJobName" parameterClass="java.lang.String" resultMap="quartzTaskInfoResultMap">
+        select <include refid="baseColumn"/> from quartz_task_info where 1=1 and JOB_NAME = #jobName#
+    </select>
+
+</sqlMap>
