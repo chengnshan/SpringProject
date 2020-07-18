@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+        PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN"
+        "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap>
+    <typeAlias alias="userInfo" type="com.cxp.ibatis.pojo.UserInfo"/>
+
+    <resultMap id="userInfoResultMap" class="com.cxp.ibatis.pojo.UserInfo">
+        <result property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="address" column="address"/>
+    </resultMap>
+
+    <sql id="baseColumn">id,name,address</sql>
+    
+    <insert id="insert" parameterClass="com.cxp.ibatis.pojo.UserInfo">
+        insert into t_user
+            (name,address) values ( #name#,#address# )
+    </insert>
+
+    <delete id="deleteById" parameterClass="Integer">
+        delete from t_user where id = #id#
+    </delete>
+
+    <select id="listUserInfo" resultClass="com.cxp.ibatis.pojo.UserInfo">
+        <![CDATA[
+            select * from t_user
+         ]]>
+    </select>
+
+    <select id="listUserInfoMap" resultClass="HashMap" resultMap="userInfoResultMap" parameterClass="com.cxp.ibatis.pojo.UserInfo">
+        select <include refid="baseColumn"/> from t_user
+
+        <dynamic prepend="where 1=1 ">
+            <isNotEmpty property="name">and name = #name#</isNotEmpty>
+            <isNotEmpty property="address">and address= #address#</isNotEmpty>
+        </dynamic>
+
+    </select>
+
+    <select id="getByAddress" parameterClass="java.lang.String" resultClass="com.cxp.ibatis.pojo.UserInfo">
+        select <include refid="baseColumn"/> from t_user where 1=1 and address = #address#
+    </select>
+
+</sqlMap>

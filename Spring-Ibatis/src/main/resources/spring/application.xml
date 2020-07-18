@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd">
+
+    <!-- 使用内存数据库 -->
+    <!--
+        separator: 使用的默认语句分隔符(如果脚本中存在“;”，则默认使用，否则使用“\n”)。
+        script: 用于填充、初始化或清理嵌入式数据库的SQL脚本。
+        database-name: 要分配给嵌入式数据库的名称。注意，这不是bean名称，而是数据库的JDBC连接URL中使用的嵌入式数据库的名称。如果是显式bean，默认为“testdb”
+    -->
+    <jdbc:embedded-database id="dataSource" type="H2">
+        <!--
+        execution: 指示此脚本的执行阶段。使用INIT在启动时执行(作为bean初始化)，或使用DESTROY在关闭时执行(作为bean销毁回调)。
+        separator: 脚本中的语句分隔符(如果脚本中存在语句分隔符，默认使用';'，否则使用'\n')。-->
+        <jdbc:script location="classpath:data/schema.sql" encoding="utf-8"/>
+        <jdbc:script location="classpath:data/data.sql" encoding="utf-8"/>
+    </jdbc:embedded-database>
+
+   <!-- <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource">
+        <property name="driverClassName" value="org.h2.Driver" />
+        <property name="url" value="jdbc:h2:mem:testdb;DB_CLOSE_ON_EXIT=FALSE;DB_CLOSE_DELAY=-1;MODE=MySql" />
+        <property name="username" value="sa" />
+        <property name="password" value="123456" />
+    </bean>-->
+
+    <bean id="sqlMapClient" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+        <property name="configLocation">  <!-- name 为configLocation或s  不可为其他 -->
+            <value>classpath:sqlMapConfig.xml</value><!-- 不区分大小写，路径前可加'/' -->
+        </property>
+
+        <!-- dataSource不是必需 -->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <bean id="userInfoDao" class="com.cxp.ibatis.dao.impl.UserInfoDaoImpl">
+        <property name="sqlMapClient" ref="sqlMapClient"></property>
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+</beans>
